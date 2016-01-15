@@ -28,12 +28,12 @@ In the duration of the incubator, we want to be able to :
 * We have an interactive data visualization demonstration.
 
 ## Deliverable Schedule:
--**Jan 14th:** Data for experiments summarized, and initial set-up of code, data, documentation  repositories planned
--**Jan 21st:** Automated preprocessing steps,determine asynchronicity of audio files, review previous acoustical fracture detection algorithm, created ground truth dataset
--**Feb  11:** Perform Noise Analysis, and attempt noise removal for fracture detection, signal separation analysis, and deliver a report (ipython notebook/blog) on the discoveries.
--**Feb 18:** Preliminary comparison of methods based on single camera vs multiple cameras          
--**Feb 25th:** Summary of potential external datasets that can be used for acoustic monitoring. Robustness analysis of the methodology on the PreT dataset.
--**March 1:** Document with roadmap for for further developments and refinements.
--**March 8:** A document describing the assessment of the developed methodologies and their performance is available.
--**March 13:** Final Code Implementation tested.
--**March 16:** Final Poster/Presentation/Documentation.
+* **Jan 14th:** Data for experiments summarized, and initial set-up of code, data, documentation  repositories planned
+* **Jan 21st:** Automated preprocessing steps,determine asynchronicity of audio files, review previous acoustical fracture detection algorithm, created ground truth dataset
+* **Feb  11:** Perform Noise Analysis, and attempt noise removal for fracture detection, signal separation analysis, and deliver a report (ipython notebook/blog) on the discoveries.
+* **Feb 18:** Preliminary comparison of methods based on single camera vs multiple cameras          
+* **Feb 25th:** Summary of potential external datasets that can be used for acoustic monitoring. Robustness analysis of the methodology on the PreT dataset.
+* **March 1:** Document with roadmap for for further developments and refinements.
+* **March 8:** A document describing the assessment of the developed methodologies and their performance is available.
+* **March 13:** Final Code Implementation tested.
+* **March 16:** Final Poster/Presentation/Documentation.
