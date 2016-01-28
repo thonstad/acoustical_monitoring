@@ -42,7 +42,42 @@ def sync_corr(signal1, signal2, use_envelope = False):
 
     return(offset)
 
+def find_offset(subset,index_key,other_keys,use_envelope = False):
+    ''' offsets = find_offset(subset,index_key,other_keys,use_envelope = False)
+    returns the offsets (in indicies) between a single channel and the
+    specified channels. Channels (1D arrays) are syncronized by their cross
+    correlation.
 
+    Input:
+        subset -      rawData dictionary {N entries} of [M,2] arrays.
+        index_key -   the key entry in subset used as a reference signal (str).
+        other_keys -  list (L,) of keys in subset to compute relative offset
+                      on (str).
+        use_envelope- if use_envelope is True the correlation is calculated on
+                      the envelopes of the two signals instead of the raw signals;
+                      the envelopes are calculated by applying a low-pass Butterworth
+                      filter to the absolute value of the signals.
+
+    Output:
+        offsets -    the relative offset (in count) of the dictionary arrays
+                     to the index array. {L entries}
+
+    '''
+    # initializes offsets with the offset of the inex_key channel to itself.
+    offsets = {index_key : 0}
+
+    # grabs the index_key array from the dictionary.
+    signal1 = subset[index_key][:,0]
+
+    # loops throuh channels in other_keys and saves the offsets to the dictionary.
+    for chani in other_keys:
+        signali = subset[chani][:,0]
+        # sync_corr(s1,s2) computes the relative offet of s2 to s1 using
+        # the cross corelation of the signals.
+        offseti = sync_corr(signal1, signali,use_envelope)
+        offsets[chani] = offseti
+
+    return(offsets)
 
 if __name__ == "__main__":
 
