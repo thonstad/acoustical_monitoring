@@ -9,8 +9,8 @@ import glob
 import os
 import scipy.io.wavfile
 #import sys
-import matplotlib.pyplot as plt
-import numpy as np
+#import matplotlib.pyplot as plt
+#import numpy as np
 
 
 
