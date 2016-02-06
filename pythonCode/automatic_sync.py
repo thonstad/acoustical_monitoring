@@ -1,3 +1,6 @@
+from scipy import signal
+import numpy as np
+
 def sync_corr(signal1, signal2, use_envelope = False):
     """ sync_corr(signal1, signal2,use_envelope = False)
         sync_corr synchronizes two signals (1D arrays) based
