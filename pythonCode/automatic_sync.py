@@ -42,6 +42,69 @@ def sync_corr(signal1, signal2, use_envelope = False):
 
     return(offset)
 
+def syncData(offsets,dataDict):
+    """
+        offsets = syncData(offsets,dataDict)
+        syncData function takes a dictionary of offsets and syncs the dataDict based on it. It assumes the keys of offsets and dataDict are the same
+
+        Input
+        -----
+        offsets: dict
+                keys are names of files
+                values are corresponding offsets
+        dataDict: dict
+                keys are names of files
+                values are the signal arrays
+                # issue - the signals are two dimensional
+
+
+        Output
+        ------
+        syncedDataFrame: pandas data frame
+            columns: file names
+            rows: time steps (supposedly synced)
+
+
+        Notes
+        -----
+        # later we could create an object dataset and have offsets and the dataDict as attributes and the syncing functions as methods.
+
+    """
+    # make this import global
+    import pandas as pd
+
+    # We assume that there will be always an overlap
+    print(offsets)
+    max_offset = max(offsets.values())
+    min_offset = min(offsets.values())
+    abs_offset = abs(max_offset - min_offset)
+
+    # extract the length of each signal
+
+    # create the output data frame
+    # see if we can make it more efficiently without a loop
+    # for now I will extract only the first channel
+    # TODO: decide how to store when keep both channels
+    # initially we do not know
+
+    # calculate the max length
+    lengths = [(len(dataDict[key])- abs_offset-offsets[key]) for (d,key) in zip(dataDict.values(),dataDict.keys())]
+    l = min(lengths)
+    print(lengths)
+
+    #syncedDataFrame = pd.DataFrame(columns=dataDict.keys())
+
+    for key in dataDict.keys():
+
+        dataDict[key] = dataDict[key][abs_offset + offsets[key] :(l+offsets[key]),0]
+
+    print(dataDict)
+
+    syncedDataFrame = pd.DataFrame(dataDict)
+    return(syncedDataFrame)
+
+
+
 
 
 if __name__ == "__main__":
@@ -51,6 +114,7 @@ if __name__ == "__main__":
     from scipy import signal
     import matplotlib.pyplot as plt
     import os
+    import pandas as pd
 
     # importing local packages
     import preprocessing as pp
@@ -67,6 +131,7 @@ if __name__ == "__main__":
 
     # subsetting the data
     subset = pp.loadSubset(audioDict,keys)
+
 
 
     # Note: for now we design sync_envelope to work with two signals
@@ -92,3 +157,21 @@ if __name__ == "__main__":
         plt.plot(np.abs(signal1[offset:]))
         plt.plot(-np.abs(signal2))
     plt.show()
+
+
+    # Testing the syncData function
+
+    # creating dummy offsets
+    offsets = dict(zip(subset.keys(), list(range(len(subset.keys())))))
+    syncedDataFrame = syncData(offsets, subset)
+    print(offsets)
+
+    def test_syncData():
+        # aaumes two channels
+        dataDict = {'0':np.array([np.arange(5,20),np.arange(5,20)]),
+                    '1':np.array([np.arange(0,15),np.arange(0,15)]),
+                    '2':np.array([np.arange(7,19),np.arange(7,19)])}
+        offsets = dict(zip(['0','1','2'],[0,5,-2]))
+        res = syncData(offsets,dataDict)
+        print(res)
+    test_syncData()
