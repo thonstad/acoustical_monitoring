@@ -46,6 +46,7 @@ def sync_corr(signal1, signal2, use_envelope = False):
     return(offset)
 
 def find_offset(subset,index_key,other_keys,use_envelope = False):
+    #TODO - add default for index keys and other keys
     ''' offsets = find_offset(subset,index_key,other_keys,use_envelope = False)
     returns the offsets (in indicies) between a single channel and the
     specified channels. Channels (1D arrays) are syncronized by their cross
@@ -81,6 +82,58 @@ def find_offset(subset,index_key,other_keys,use_envelope = False):
         offsets[chani] = offseti
 
     return(offsets)
+
+
+def sync_dataset(cDataset,names,max_iter = 2):
+    '''
+    sDataset = sync_dataset(cDataset,names,max_iter = 2). Syncs the input dataset (dictionary)
+    with corresponding keys (names), recursively determines relative offsets using the cross
+    correlation.
+    Inputs:
+        cDataset (dict) - dictionary with raw audio data, each key corresponds to an (Ni,2) array of 1D signals.
+        names (list) - keys to the dictionary (data will be synced to names[0])
+        max_iter (optional) - maximum number of iterations to be performed.
+    Outputs:
+        sDataset (dict) - synced dataset (each entry has the same length)
+
+    Needed Additions (2/5/2016): needs to return out the final offset values!!
+    '''
+
+    offsets = find_offset(cDataset,names[0],names[1:])
+
+    iter_count = 0
+
+
+    # if all offsets are zero the while loop will not be entered
+    # so set syncData to the original dataset
+    if sum(offsets.values()) == 0:
+        syncData = cDataset
+
+    while abs(sum(offsets.values())) > 0 and iter_count < max_iter:
+        syncData = {}
+        startInd = 0
+        endInd = np.Inf
+
+        for name in names:
+            if offsets[name] > startInd:
+                startInd = offsets[name]
+            if offsets[name]+len(cDataset[name][:,0]) < endInd:
+                endInd = offsets[name]+len(cDataset[name][:,0])
+
+        for name in names:
+            syncData[name] = cDataset[name][startInd-offsets[name]:endInd-offsets[name],:]
+            # The line below will change the original dataset
+            # cDataset[name] = syncData[name]
+
+            assert len(syncData[name]) == endInd - startInd
+
+        offsets = find_offset(syncData,names[0],names[1:])
+        iter_count += 1
+
+
+    # assert sum(offsets.values()) == 0, print(fixedOffsets)
+
+    return syncData
 
 if __name__ == "__main__":
 
