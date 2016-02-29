@@ -1,5 +1,4 @@
 from .. import automatic_sync as autosync
-reload(autosync)
 
 import numpy as np
 import numpy.testing as npt
@@ -19,7 +18,7 @@ def test_sync_corr_forward():
     # signal1 = random.randn(10)
     signal2 = signal1[2:]
     offset = autosync.sync_corr(signal1, signal2)
-    print offset
+    print(offset)
     npt.assert_equal(offset, 2)
 
 
@@ -31,7 +30,7 @@ def test_sync_corr_backward():
     #signal1 = random.randn(10)
     signal2 = signal1[2:]
     offset = autosync.sync_corr(signal2, signal1)
-    print offset
+    print(offset)
     npt.assert_equal(offset, -2)
 
 
@@ -51,7 +50,7 @@ def test_sync_dataset():
                 '1':np.array([y,y]).T,
                 '2':np.array([y[5:],y[5:]]).T}
 
-    syncedDict = autosync.sync_dataset(dataDict,dataDict.keys())
+    syncedDict = autosync.sync_dataset(dataDict,list(dataDict.keys()))
 
     npt.assert_equal(syncedDict['0'][:,0],dataDict['0'][3:,0])
     npt.assert_equal(syncedDict['1'][:,0],dataDict['1'][5:,0])
@@ -67,8 +66,9 @@ def test_find_offset():
     dataDict = {'1':np.array([y,y]).T,
                             '2':np.array([y[5:],y[5:]]).T}
     offsets = autosync.find_offset(dataDict,'1',['2'])
-    npt.assert_equal(offsets.values(),np.array([0,5]))
 
+    print(offsets.values())
+    npt.assert_equal(np.array([offsets['1'],offsets['2']]),np.array([0,5])) 
 
 def test_synced_dataset():
     """
@@ -85,7 +85,11 @@ def test_synced_dataset():
                 '1':np.array([y,y]).T,
                 '2':np.array([y,y]).T}
 
-    syncedDict = autosync.sync_dataset(dataDict,dataDict.keys())
+    syncedDict = autosync.sync_dataset(dataDict,['0','1','2'])
 
     # syncedDict should be the same as dataDict
-    assert cmp(syncedDict, dataDict) == 0
+    vals1 = np.hstack(tuple(dataDict.values()))
+    vals2 = np.hstack(tuple(syncedDict.values()))
+	
+    npt.assert_equal(vals1,vals2) 
+    
