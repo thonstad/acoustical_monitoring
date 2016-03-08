@@ -1,70 +1,62 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jan 25 14:24:04 2016
-
-Script that plots spectrograms of audio files.
-
-@author: Travis
+This file contains functions to detect fractures based on different features.
 """
 
 import glob
 import os
-#import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-# TEST THE FUNCTIONS
 import preprocessing as pp
 
+# directory where the audio fles reside
+rawDataPath = os.path.join("..","rawData")
 
-rawDataPath = os.path.join("..","rawData"); # directory where the audio fles reside
-
+# extract all filenames
 files = glob.glob(os.path.join(rawDataPath,"*.wav"))
-names = [];
-
+names = []
 for name in files:
     fileName = os.path.basename(name).split(".")[0]
     names.append(fileName)
 
 
+# specify a specific file
 filt = (None,None,['17']) #
 audioFiles = pp.getKeys(names,filt);
 
-(names,cDataset) = pp.readWAV(rawDataPath,audioFiles); # opens files and writes to a dictionary
+# opens files and writes to a dictionary
+(names,cDataset) = pp.readWAV(rawDataPath,audioFiles);
 
-#cDataset = loadSubset(data,audioFiles);
-
-
-plt.figure(figsize=(50,20))
-
-for ii in range(len(cDataset)):
-
-    plt.subplot(len(cDataset)/2,2,ii+1)
-    (Pxx,freqs,bins,im) = plt.specgram(cDataset[audioFiles[ii]][:,0],NFFT=2048,Fs=48000,noverlap=900,cmap=plt.cm.gist_heat)
-    #plt.plot(cDataset[audioFiles[ii]][:,0]-cDataset[audioFiles[ii]][:,1],'b')
-    #plt.ylim([3000,3800])
-    plt.draw()
-
-#plt.ion()
-
-#plt.show()
-
-# function which calculates fracture locations based on edges in spectrogram:
-
-# smoothing
-# options 'canny','sobel' (canny has extra parameters)
-# threshold based on column sum, based on hough transform.
-
-# return locations, plot lines on top of original signal,
-# on top of histogram?
-# decide how to automatically select threshold
+# cDataset = loadSubset(data,audioFiles);
 
 
-def edges2fractures(ts, Fs=48000, edge_type='Sobel', smoothing=None,loc_type='thr',threshold=10):
+def edges2fractures(ts, Fs=48000, edge_type='Sobel', smoothing=None):
+    """
+        edges2fractures predicts peaks locations based on edges
+        in the signal spectrogram
+
+        Inputs
+        ------
+
+        Fs: scalar
+            the frequency of the signal
+        edge_type: string
+            the type of the edge detector - 'Sobel' or 'Canny'
+        smoothing: scalar or None
+            if None, no smoothing is applied, otherwise
+            smoothed with Gaussian filter with sigma=smoothing
+
+        Returns
+        -------
+        array containing the times of fractures
+    """
+
     from skimage import filters
     from skimage import feature
 
+    # TODO Possibly allow to change the window
     NFFT = 2048       # the length of the windowing segments
     # convert the frequency to integer
     Fs = int(Fs)
@@ -81,23 +73,28 @@ def edges2fractures(ts, Fs=48000, edge_type='Sobel', smoothing=None,loc_type='th
     if edge_type=='Sobel':
         edges = filters.sobel_v(Pxx)
         # convert to binary edges
-        # fix arbitrary threshold!!!
+        # TODO fix arbitrary threshold!!!
         edges = (np.abs(edges)>20)
     elif edge_type=='Canny':
         edges = feature.canny(Pxx)
+    else:
+        raise ValueError('Invalid Edge Detector Type')
+
+
 
 
     #plt.figure(figsize = (10,3))
     #plt.imshow(edges, cmap='gray')
     # determining fracture locations
     colSums = np.sum(edges, axis=0)
-    print(np.max(colSums))
-    print(np.min(colSums))
 
-    # truncate at some number of standard deviations
+
+    # truncate at some number of standard deviations (here 3)
     std = np.std(colSums)
     md = np.median(colSums)
     frac_idx, = np.where(colSums > md+3*std)
+    if len(frac_idx) == 0:
+        return []
 
     # plotting the results
     plt.figure(figsize = (10,3))
