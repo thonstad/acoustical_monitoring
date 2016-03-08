@@ -72,7 +72,7 @@ def find_offset(subset,index_key,other_keys,use_envelope = False):
     # grabs the index_key array from the dictionary.
     signal1 = subset[index_key][:,0]
 
-    # loops throuh channels in other_keys and saves the offsets to the dictionary.
+    # loops through channels in other_keys and saves the offsets to the dictionary.
     for chani in other_keys:
         signali = subset[chani][:,0]
         # sync_corr(s1,s2) computes the relative offet of s2 to s1 using
@@ -81,6 +81,109 @@ def find_offset(subset,index_key,other_keys,use_envelope = False):
         offsets[chani] = offseti
 
     return(offsets)
+    
+    
+def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
+    '''
+    offsets, sDataset = sync_dataset(cDataset,names,max_iter = 2). Syncs the input dataset (dictionary) 
+    with corresponding keys (names), recursively determines relative offsets using the cross 
+    correlation. 
+    Inputs:
+        dataset (dict) - dictionary with raw audio data, each key corresponds to an (Ni,2) array of 1D signals.
+        indexName (str) - dictionary key for signal to sync off of
+		names (list) - keys to the dictionary (data will be synced to names[0])
+        max_iter (optional) - maximum number of iterations to be performed.
+        mask (optional) - range of values to consider in syncing. Relative values ranging from [0,1], list size (2,)
+    Outputs:
+        sDataset (dict) - synced dataset (each entry has the same length)
+        final_offsets (dict) - final signal offset values
+        
+    '''
+    
+    # copies original dataset to work on the copy
+    origDataset = dataset.copy()
+    cDataset = dataset.copy()
+    
+    # initializes variables
+    iter_count = 0
+    final_offsets ={}
+    start_index ={}
+    
+    # applies the mask to the indexName values in the dataset
+    for name in names:
+        Npoints = len(cDataset[name][:,0])
+        startInd = int(np.floor(Npoints*mask[0]))
+        endInd = int(np.ceil(Npoints*mask[1]))
+        cDataset[name] = cDataset[name][startInd:endInd,:]
+        start_index[name] = startInd
+        final_offsets[name] = 0
+        
+        
+    offsets =  find_offset(cDataset,indexName,[k  for k in names if k != indexName])
+    
+    if abs(sum(offsets.values())) == 0:
+        final_offsets = offsets
+    else:
+        # syncs the masked dataset
+        while abs(sum(offsets.values())) > 0 and iter_count < max_iter:
+
+            #print(offsets)
+            endInd = np.Inf
+            startInd = 0
+
+            for name in names:
+                if offsets[name] > startInd:
+                    startInd = offsets[name]
+                if len(cDataset[name][:,0]) < endInd:
+                    endInd = len(cDataset[name][:,0])
+
+            for name in names:
+                cDataset[name] = cDataset[name][startInd-offsets[name]:endInd-offsets[name],:]
+                final_offsets[name] = final_offsets[name] + startInd-offsets[name]
+
+            offsets = find_offset(cDataset,indexName,[k  for k in names if k != indexName])
+            iter_count += 1
+        
+        print(offsets.values())
+        assert sum(offsets.values()) == 0, print(offsets)
+    
+        # Modifies the original dataset based on the start location identified through syncing
+        #
+        #            offset    startInd
+        # |----------------|--|--------------| signal 1
+        #                  |
+        # |------- L1 -----|------ L2 -------|
+        #                  |
+        #                  |     startInd
+        #    |-------------|----|-----------------|  signal 2
+        #                  |
+        #    |----- L1 ----|--------- L2 ---------|
+        #                  |
+        #                  |
+        #
+        #    |------------------------------| final signal length
+        #
+
+        Lend = np.Inf
+        Lstart = np.Inf
+        Lref = start_index[indexName]+final_offsets[indexName]
+
+        for name in names:
+            L1 = start_index[name]+final_offsets[name]
+            L2 = len(origDataset[name][:,0]) - L1
+
+            Lend= min([Lend,L2])
+            Lstart = min([Lstart,L1])
+            
+
+
+        for name in names:
+            L1 = start_index[name]+final_offsets[name]
+            this_range = range(L1-Lstart,L1+Lend)
+            origDataset[name] = origDataset[name][this_range,:]
+            final_offsets[name] = L1-Lstart
+    
+    return final_offsets, origDataset
 
 if __name__ == "__main__":
 
