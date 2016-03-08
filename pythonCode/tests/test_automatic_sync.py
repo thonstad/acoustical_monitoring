@@ -50,7 +50,9 @@ def test_sync_dataset():
                 '1':np.array([y,y]).T,
                 '2':np.array([y[5:],y[5:]]).T}
 
-    syncedDict = autosync.sync_dataset(dataDict,list(dataDict.keys()))
+
+    offsets, syncedDict = autosync.sync_dataset(dataDict,'0',list(dataDict.keys()))
+
 
     npt.assert_equal(syncedDict['0'][:,0],dataDict['0'][3:,0])
     npt.assert_equal(syncedDict['1'][:,0],dataDict['1'][5:,0])
@@ -85,7 +87,9 @@ def test_synced_dataset():
                 '1':np.array([y,y]).T,
                 '2':np.array([y,y]).T}
 
-    syncedDict = autosync.sync_dataset(dataDict,['0','1','2'])
+
+    offsets, syncedDict = autosync.sync_dataset(dataDict,'0',['0','1','2'])
+
 
     # syncedDict should be the same as dataDict
     vals1 = np.hstack(tuple(dataDict.values()))
