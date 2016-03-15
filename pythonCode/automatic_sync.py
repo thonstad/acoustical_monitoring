@@ -67,6 +67,7 @@ def find_offset(subset,index_key,other_keys,use_envelope = False):
                      to the index array. {L entries}
 
     '''
+
     # initializes offsets with the offset of the inex_key channel to itself.
     offsets = {index_key : 0}
 
@@ -82,13 +83,13 @@ def find_offset(subset,index_key,other_keys,use_envelope = False):
         offsets[chani] = offseti
 
     return(offsets)
-    
-    
+
+
 def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
     '''
-    offsets, sDataset = sync_dataset(cDataset,names,max_iter = 2). Syncs the input dataset (dictionary) 
-    with corresponding keys (names), recursively determines relative offsets using the cross 
-    correlation. 
+    offsets, sDataset = sync_dataset(cDataset,names,max_iter = 2). Syncs the input dataset (dictionary)
+    with corresponding keys (names), recursively determines relative offsets using the cross
+    correlation.
     Inputs:
         dataset (dict) - dictionary with raw audio data, each key corresponds to an (Ni,2) array of 1D signals.
         indexName (str) - dictionary key for signal to sync off of
@@ -98,18 +99,18 @@ def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
     Outputs:
         sDataset (dict) - synced dataset (each entry has the same length)
         final_offsets (dict) - final signal offset values
-        
+
     '''
-    
+
     # copies original dataset to work on the copy
     origDataset = dataset.copy()
     cDataset = dataset.copy()
-    
+
     # initializes variables
     iter_count = 0
     final_offsets ={}
     start_index ={}
-    
+
     # applies the mask to the indexName values in the dataset
     for name in names:
         Npoints = len(cDataset[name][:,0])
@@ -118,10 +119,10 @@ def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
         cDataset[name] = cDataset[name][startInd:endInd,:]
         start_index[name] = startInd
         final_offsets[name] = 0
-        
-        
+
+
     offsets =  find_offset(cDataset,indexName,[k  for k in names if k != indexName])
-    
+
     if abs(sum(offsets.values())) == 0:
         final_offsets = offsets
     else:
@@ -142,12 +143,12 @@ def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
                 cDataset[name] = cDataset[name][startInd-offsets[name]:endInd-offsets[name],:]
                 final_offsets[name] = final_offsets[name] + startInd-offsets[name]
 
-            offsets = find_offset(cDataset,indexName,[k  for k in names if k != indexName])
+            offsets = find_offset(cDataset,indexName,[k for k in names if k != indexName])
             iter_count += 1
-        
-        print(offsets.values())
+
+
         assert sum(offsets.values()) == 0, print(offsets)
-    
+
         # Modifies the original dataset based on the start location identified through syncing
         #
         #            offset    startInd
@@ -175,7 +176,7 @@ def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
 
             Lend= min([Lend,L2])
             Lstart = min([Lstart,L1])
-            
+
 
 
         for name in names:
@@ -183,60 +184,9 @@ def sync_dataset(dataset,indexName,names,max_iter = 2,mask=[0,1]):
             this_range = range(L1-Lstart,L1+Lend)
             origDataset[name] = origDataset[name][this_range,:]
             final_offsets[name] = L1-Lstart
-    
+
     return final_offsets, origDataset
 
-
-def sync_dataset(cDataset,names,max_iter = 2):
-    '''
-    sDataset = sync_dataset(cDataset,names,max_iter = 2). Syncs the input dataset (dictionary)
-    with corresponding keys (names), recursively determines relative offsets using the cross
-    correlation.
-    Inputs:
-        cDataset (dict) - dictionary with raw audio data, each key corresponds to an (Ni,2) array of 1D signals.
-        names (list) - keys to the dictionary (data will be synced to names[0])
-        max_iter (optional) - maximum number of iterations to be performed.
-    Outputs:
-        sDataset (dict) - synced dataset (each entry has the same length)
-
-    Needed Additions (2/5/2016): needs to return out the final offset values!!
-    '''
-
-    offsets = find_offset(cDataset,names[0],names[1:])
-
-    iter_count = 0
-
-
-    # if all offsets are zero the while loop will not be entered
-    # so set syncData to the original dataset
-    if sum(offsets.values()) == 0:
-        syncData = cDataset
-
-    while abs(sum(offsets.values())) > 0 and iter_count < max_iter:
-        syncData = {}
-        startInd = 0
-        endInd = np.Inf
-
-        for name in names:
-            if offsets[name] > startInd:
-                startInd = offsets[name]
-            if offsets[name]+len(cDataset[name][:,0]) < endInd:
-                endInd = offsets[name]+len(cDataset[name][:,0])
-
-        for name in names:
-            syncData[name] = cDataset[name][startInd-offsets[name]:endInd-offsets[name],:]
-            # The line below will change the original dataset
-            # cDataset[name] = syncData[name]
-
-            assert len(syncData[name]) == endInd - startInd
-
-        offsets = find_offset(syncData,names[0],names[1:])
-        iter_count += 1
-
-
-    # assert sum(offsets.values()) == 0, print(fixedOffsets)
-
-    return syncData
 
 if __name__ == "__main__":
 

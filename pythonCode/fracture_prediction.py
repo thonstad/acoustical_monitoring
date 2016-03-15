@@ -117,3 +117,30 @@ def edges2fractures(ts, Fs=48000, edge_type='Sobel', smoothing=None):
     fig = [plt.axvline(bins[_x], linewidth=1, color='g') for _x in frac_idx]
 
     return bins[frac_idx]
+
+
+# function to convert a list of function times to a binary vector of fracture locations
+
+# calculate van Rossum between two signals
+def dissimilarity(signal1, signal2, *args,dist_type = 'vanRossum'):
+    """
+    dissimilarity calculates the dissimilarity of two signals
+
+    Inputs
+    ------
+    signal1: array
+    singal2: array
+    dist_type: character
+        'vanRossum' uses pymuvr package
+
+    Returns
+    -------
+    scalar:
+
+
+"""
+    if dist_type == 'vanRossum':
+    # if True:
+        import pymuvr
+        D = pymuvr.square_dissimilarity_matrix([[list(signal1)], [list(signal2)]],*args)
+    return(D[0][1])
