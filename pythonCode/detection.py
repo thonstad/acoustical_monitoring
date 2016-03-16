@@ -12,138 +12,138 @@ import matplotlib.pyplot as plt
 
 
 def med_filt(chan,kernel = 11,thresh = 3):
-    '''    
-    Identifies fractures within the signal by thresholding. 
+    '''
+    Identifies fractures within the signal by thresholding.
     Uses a median filtering method to  subtract the baseline from the absolute
-    value of the signal. 
-    
+    value of the signal.
+
     Inputs:
         chan - (nparray) input signal array
-        
+
         optional
         -----------
         kernel (int) kernel size of the median filter.
-        
+
         thresh (int) the number of standard deviations above the mean to consider
                      the identified peak a fracture.
-                     
+
     Outputs:
         fractures (list) indicies of the identified fractures within the signal
     '''
     channel = abs(chan)
     filtChannel = signal.medfilt(channel, kernel_size = kernel)
     corr_chan = channel-filtChannel
-    
+
     fractures = sliding_max(corr_chan,3000,thresh)
-    
+
     time = 1/48000*np.linspace(0,len(corr_chan),len(corr_chan))
     plt.plot(time,corr_chan)
     plt.plot([time[fractures],time[fractures]],[min(corr_chan),max(corr_chan)],'r')
-    
+
     return time[fractures]
 
 
 def sliding_max(chan,kernel_size,threshold):
     '''
-    Identifies local maximum within the signal by chunking the signal. 
+    Identifies local maximum within the signal by chunking the signal.
     Throws out maximums that are less than a threshold defined using the mean
     and standard deviation of the signal.
-    
-    
+
+
     Inputs:
         chan - (nparray) input signal array
-        
+
         optional
         -----------
         kernel_size (int) the size of the chunks.
-        
+
         threshold (int) the number of standard deviations above the mean to consider
                      the identified peak a fracture.
-                     
+
     Outputs:
         fractures (list) indicies of the identified fractures within the signal
-    
+
     '''
-    
-    
+
+
     fractures = []
-    
+
     cutoff = np.mean(abs(chan)) + threshold*np.std(abs(chan))
-    
+
     pad = kernel_size-(len(chan) % kernel_size);
     pad_chan = np.hstack((chan,np.zeros((pad,))))
     dim = len(pad_chan)/kernel_size
-    
+
     res_chan = np.reshape(abs(pad_chan),(dim,kernel_size))
     ind = np.argmax(res_chan, axis = 1)
     indind = np.linspace(0,len(pad_chan)-kernel_size,dim)
-    
+
     fract = (np.array((ind + indind),dtype=int)).tolist()
 
     for frac in fract:
         if abs(pad_chan[frac]) > cutoff:
             fractures.append(frac)
-            
-    
-    
+
+
+
     return fractures
 
 
 def cwt_ridges(chan,dwnsmp_rat = 48,max_width = 20,thresh = 3):
-    '''    
+    '''
     Identifies frctures within the signal using the continuous wavelet
-    transform on the dewnsampled signal (significant downsampling is required 
+    transform on the dewnsampled signal (significant downsampling is required
     in order to perform the cwt on most machines).
-    
+
     Inputs:
         chan - (nparray) input signal array
-        
+
         optional
         -----------
         dwnsmp_rat (int) the fraction of the original sample rate.
-                         
+
         max_width (int) the maximum wavelet width considered.
-        
+
         thresh (int) the number of standard deviations above the mean to consider
                      the identified peak a fracture.
-                     
+
     Outputs:
         fractures (list) indicies of the identified fractures within the signal
     '''
-    
-    fractures = [] 
-    
+
+    fractures = []
+
     # downsamples signal in order to perform the transform
     dec_chan = signal.decimate(chan,dwnsmp_rat)
     Fs = 48000/dwnsmp_rat
     dec_time = 1/Fs*np.linspace(0,len(dec_chan),len(dec_chan))
-    
+
     # wavelet widths
     widths = np.linspace(1,max_width,10)
 
-    
+
     peakInd = signal.find_peaks_cwt(abs(dec_chan),
                                 widths,
                                 noise_perc=.1,
                                 min_snr=1,
                                 min_length = 3)
-    
+
     plt.plot(dec_time,dec_chan)
-    
+
     lmin = min(dec_chan)
     ulim = max(dec_chan)
-    
+
     for peak in peakInd:
         if abs(dec_chan[peak]) > np.mean(abs(dec_chan)) + thresh*np.std(abs(dec_chan)):
             fractures.append(peak)
             plt.plot([dec_time[peak],dec_time[peak]],[lmin,ulim],'r')
-            
-    
-    
+
+
+
 
     return dec_time[fractures]
-    
-    
+
+
 
 
 def spectrogram_ridges(chan,gap_thresh = 50,min_length = 150):
@@ -152,34 +152,34 @@ def spectrogram_ridges(chan,gap_thresh = 50,min_length = 150):
     Connects local maxima for each frequency bin of the spectrogram matrix, .
     Looks for vertical lines of a given length within the frequency content.
     The goal is to find broadband noises within the signal (fractures).
-    
+
     Inputs:
         chan - (nparray) input signal array
-        
+
         optional
         gap_thresh (int) the maximum number of freq bins that can be skipped,
                          while still considering the ridge line connected.
-                         
-        min_length (int) the minumum length of ridge lines to be considered a 
+
+        min_length (int) the minumum length of ridge lines to be considered a
                          fracture.
     Outputs:
         fractures (list) indicies of the identified fractures within the signal
     '''
-    fractures = []    
-    
+    fractures = []
+
     Pxx, freqs, bins, im = plt.specgram(chan, NFFT=512, Fs=48000, noverlap=0)
     ridge_lines = identify_ridge_lines(Pxx, 0*np.ones(len(bins)), gap_thresh)
-    
+
     for x in ridge_lines:
         if len(x[1]) > min_length:
             fractures.append(bins[x[1][0]])
             plt.plot(bins[x[1][-10:]],freqs[len(freqs)-x[0][-10:]-1],'b')
-    
-    
-    
-    
+
+
+
+
     return fractures
-    
+
 
 
 def identify_ridge_lines(matr, max_distances, gap_thresh):
@@ -298,7 +298,7 @@ def identify_ridge_lines(matr, max_distances, gap_thresh):
         cols[sortargs] = line[1]
         out_lines.append([rows, cols])
     return out_lines
-    
+
 def boolrelextrema(data, comparator,
                   axis=0, order=1, mode='clip'):
     """

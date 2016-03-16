@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 """
@@ -117,3 +118,57 @@ def edges2fractures(ts, Fs=48000, edge_type='Sobel', smoothing=None):
     fig = [plt.axvline(bins[_x], linewidth=1, color='g') for _x in frac_idx]
 
     return bins[frac_idx]
+
+
+# function to convert a list of function times to a binary vector of fracture locations
+
+# calculate van Rossum between two signals
+def dissimilarity(signal1, signal2, *args,dist_type = 'vanRossum'):
+    """
+    dissimilarity calculates the dissimilarity of two signals
+
+    Inputs
+    ------
+    signal1: array
+    singal2: array
+    dist_type: character
+        'vanRossum' uses pymuvr package
+
+    Returns
+    -------
+    scalar:
+
+
+"""
+    if dist_type == 'vanRossum':
+    # if True:
+        import pymuvr
+        D = pymuvr.square_dissimilarity_matrix([[list(signal1)], [list(signal2)]],*args)
+    return(D[0][1])
+
+# function which displays the fractures
+def displayFractureEstimates(fractureTimes, groundTruth, signal=None):
+    fig = plt.figure()
+    ax = fig.add_subplot(111,aspect='auto')
+    index = 1
+    offset = 0
+    if signal is not None:
+        offset = np.max(np.abs(signal/50000))
+        ax.plot(np.arange(len(signal))/48000,signal/50000)
+
+    names = fractureTimes.keys()
+    bent_labels = [name.split('_')[1] for name in names]
+    print(bent_labels)
+    b, labels = np.unique(bent_labels, return_inverse=True)
+
+    # colors = mpl.cm.jet
+    colors = mpl.cm.rainbow(np.linspace(0,0.8,3))
+    for name,l in zip(names,labels):
+        ax.plot(fractureTimes[name], index*np.ones_like(fractureTimes[name])+offset, 'o', color = colors[l], markersize=4)
+        index += 1
+    ax.plot([groundTruth,groundTruth],[0-offset,len(names)+1+offset],'r')
+    ax.set_yticks(np.arange(1+offset,len(names)+1+offset))
+    ax.set_yticklabels(names)
+    #ax.plot()
+    ax.set_xlim(30, 40)
+    return(ax)
