@@ -40,3 +40,5 @@ In the duration of the incubator, we want to be able to :
 * **March 8:** A document describing the assessment of the developed methodologies and their performance is available.
 * **March 13:** Final Code Implementation tested.
 * **March 16:** Final Poster/Presentation/Documentation.
+
+## [Poster](https://github.com/thonstad/acoustical_monitoring/PosterTT_20160208.pdf)
